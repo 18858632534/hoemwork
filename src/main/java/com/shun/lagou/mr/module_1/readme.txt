@@ -6,3 +6,5 @@
 个人作业总结:
     mr编程主要是根据不同的业务场景对InputFormat,Mapper,Partitioner,Combiner,Reducer,OutputFormat六个类有选择的实现各自逻辑,优秀的
 解题思路需要我们对整个流程和各自的功能有清晰的理解
+
+    额外写了下双缓冲机制的代码样例

@@ -1,59 +1,19 @@
-1. 找出全部夺得3连贯的队伍
+Impala作业题:
+    WITH tmp as
+    (SELECT
+    t.`user_id`,
+    t.`click_time`,
+    SUM(t.new) OVER(PARTITION BY t.user_id ORDER BY click_time
+        ROWS BETWEEN UNBOUNDED PRECEDING and CURRENT ROW ) as part
+    FROM
+    (SELECT
+    `user_id`,
+    `click_time`,
+    if(UNIX_TIMESTAMP(`click_time`)-UNIX_TIMESTAMP(LAG(`click_time`) OVER(PARTITION BY `user_id`  ORDER BY `click_time`))>30*60,1,0) AS new
+    from user_clicklog) as t)
+
     SELECT
-        distinct(t.`team`)
-    from
-        (SELECT
-        `team`,
-        `year`,
-        nvl(LAG(`year`) OVER(PARTITION BY team ORDER BY `year`),0) AS pre,
-        nvl(LEAD(`year`) OVER(PARTITION BY team ORDER BY `year`),0) AS post
-        from t1) as t
-    WHERE 2*t.year-pre-post=0;
-
-2. 找出每个id在在一天之内所有的波峰与波谷值
-    SELECT
-        t.`id`,
-        t.`time`,
-        t.`price`,
-        if (t.price<t.pre,"波谷","波峰") as feature
-    from
-        (SELECT
-            `id`,
-            `time`,
-            `price`,
-            LAG(`price`) OVER(PARTITION BY `id`  ORDER BY `time`) AS pre,
-            LEAD(`price`) OVER(PARTITION BY `id` ORDER BY `time`) AS post
-        from t2) as t
-    where t.pre is not null
-    and t.post is not null
-    and ((t.price<t.pre and t.price<t.post)
-        or (t.price>t.pre and t.price > t.post));
-
-3、写SQL
-    3.1、每个id浏览时长、步长
-        SELECT
-            t.id,
-            (UNIX_TIMESTAMP(t.last)-UNIX_TIMESTAMP(t.first))/60 as "时长",
-            t.num as "步长"
-        from
-            (SELECT id, MAX(dt) as last ,min(dt) as first,COUNT(1) as num from t3 GROUP by id) as t;
-    3.2、如果两次浏览之间的间隔超过30分钟，认为是两个不同的浏览时间；再求每个id浏览时长、步长
-        WITH tmp as
-        (SELECT
-        t.`id`,
-        t.`dt`,
-        SUM(t.new) OVER(PARTITION BY t.id ORDER BY dt
-            ROWS BETWEEN UNBOUNDED PRECEDING and CURRENT ROW ) as part
-        FROM
-        (SELECT
-        `id`,
-        `dt`,
-        if(UNIX_TIMESTAMP(`dt`)-UNIX_TIMESTAMP(LAG(`dt`) OVER(PARTITION BY `id`  ORDER BY `dt`))>30*60,1,0) AS new
-        from t3) as t)
-
-        SELECT
-            a.id,
-            (UNIX_TIMESTAMP(a.last)-UNIX_TIMESTAMP(a.first))/60 as "时长",
-            a.num as "步长"
-        from
-            (SELECT id, MAX(dt) as last ,min(dt) as first,COUNT(1) as num from tmp GROUP by id,part) as a;
+    tmp.user_id,
+    tmp.click_time,
+    RANK() OVER(PARTITION BY tmp.user_id, tmp.part ORDER BY tmp.click_time) AS number
+    from tmp;

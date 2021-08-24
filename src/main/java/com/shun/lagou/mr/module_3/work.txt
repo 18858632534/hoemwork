@@ -1,0 +1,19 @@
+Impala作业题:
+    WITH tmp as
+    (SELECT
+    t.`user_id`,
+    t.`click_time`,
+    SUM(t.new) OVER(PARTITION BY t.user_id ORDER BY click_time
+        ROWS BETWEEN UNBOUNDED PRECEDING and CURRENT ROW ) as part
+    FROM
+    (SELECT
+    `user_id`,
+    `click_time`,
+    if(UNIX_TIMESTAMP(`click_time`)-UNIX_TIMESTAMP(LAG(`click_time`) OVER(PARTITION BY `user_id`  ORDER BY `click_time`))>30*60,1,0) AS new
+    from user_clicklog) as t)
+
+    SELECT
+    tmp.user_id,
+    tmp.click_time,
+    RANK() OVER(PARTITION BY tmp.user_id, tmp.part ORDER BY tmp.click_time) AS number
+    from tmp;

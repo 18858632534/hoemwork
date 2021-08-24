@@ -1,0 +1,2 @@
+type=command
+command=/bin/bash /root/shun/work/tmp/import.sh
